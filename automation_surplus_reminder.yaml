@@ -1,0 +1,53 @@
+# Solar Surplus Reminder
+# Notifies when there's enough solar surplus to charge the EV but the cable
+# isn't connected. Helps the user take advantage of free solar energy.
+#
+# Conditions:
+#   - Exporting >1150W to grid for 10+ minutes
+#   - Car is at home
+#   - Cable is disconnected
+#   - Battery below 90%
+#   - Throttled to max 1 notification per hour
+
+alias: Solar Surplus - Plug in reminder
+description: >
+  Notifies when exporting >1150W for 10+ minutes with the car at home
+  and cable disconnected. Max one notification per hour.
+
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.shellyproem50_08f9e0e60c3c_energy_meter_1_power
+    # grid_w < -1150 means exporting more than 1150W
+    below: -1150
+    for:
+      minutes: 10
+
+conditions:
+  - condition: state
+    entity_id: device_tracker.carro_location
+    state: home
+  - condition: state
+    entity_id: binary_sensor.carro_charge_cable
+    state: "off"
+  - condition: numeric_state
+    entity_id: sensor.carro_battery_level
+    below: 90
+  # Throttle: only notify once per hour
+  - condition: template
+    value_template: >
+      {{ (as_timestamp(now()) -
+          as_timestamp(state_attr("automation.13_solar_surplus_lembrete_ligar_carro", "last_triggered"), 0)
+         ) > 3600 }}
+
+actions:
+  - variables:
+      export_w: >
+        {{ -(states('sensor.shellyproem50_08f9e0e60c3c_energy_meter_1_power') | float(0)) | round(0) }}
+      battery: >
+        {{ states('sensor.carro_battery_level') | float(0) | round(0) }}
+  - action: notify.notify
+    data:
+      title: "Solar - Plug in your car!"
+      message: "Exporting {{ export_w }}W to the grid. Car is home at {{ battery }}% — plug in to use free solar energy."
+
+mode: single

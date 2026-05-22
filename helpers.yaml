@@ -1,0 +1,15 @@
+# Required Home Assistant helpers for the Solar EV Charging automation.
+# Create these via Settings → Devices & Services → Helpers, or add to configuration.yaml.
+
+input_boolean:
+  solar_ev_charging:
+    name: Solar EV Charging
+    icon: mdi:solar-power
+    # Tracks whether the car is currently being charged from solar surplus.
+    # Managed entirely by the automation — do not toggle manually.
+
+  emergency_ev_charging:
+    name: Emergency EV Charging
+    icon: mdi:battery-alert
+    # Tracks whether emergency charging is active (battery < 40%).
+    # Managed entirely by the automation — do not toggle manually.

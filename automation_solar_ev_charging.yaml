@@ -1,0 +1,166 @@
+# Solar EV Charging Controller
+# Adjusts Tesla charging current every 2 minutes to match solar surplus.
+# Uses ShellyProEM50 for real-time energy monitoring:
+#   - Channel 0: Solar production (voltage)
+#   - Channel 1: Grid net meter (positive = importing, negative = exporting)
+#
+# Modes:
+#   - Solar: charges only from surplus (5-25A range)
+#   - Emergency: battery < 40% → full 25A from grid until 60%
+#
+# Required helpers:
+#   - input_boolean.solar_ev_charging (managed by automation)
+#   - input_boolean.emergency_ev_charging (managed by automation)
+
+alias: Solar EV Charging Controller
+description: >
+  Every 2 min: calculates solar surplus and adjusts Tesla charging amps.
+  Emergency mode kicks in below 40% battery, charging at 25A until 60%.
+  Monophase setup, 5-25A range.
+  surplus = (-grid_W) + car_W
+
+triggers:
+  - trigger: time_pattern
+    minutes: /2
+
+conditions:
+  # Only run when charging cable is connected
+  - condition: state
+    entity_id: binary_sensor.carro_charge_cable
+    state: "on"
+  # Don't bother if battery is nearly full
+  - condition: numeric_state
+    entity_id: sensor.carro_battery_level
+    below: 95
+
+actions:
+  - variables:
+      battery: "{{ states('sensor.carro_battery_level') | float(50) }}"
+
+      # ShellyProEM50 readings
+      # grid_w: positive = importing from grid, negative = exporting to grid
+      grid_w: >
+        {{ states('sensor.shellyproem50_08f9e0e60c3c_energy_meter_1_power') | float(0) }}
+      voltage: >
+        {{ states('sensor.shellyproem50_08f9e0e60c3c_energy_meter_0_voltage') | float(230) }}
+
+      # Current charger state
+      charger_amps: "{{ states('sensor.carro_charger_current') | float(0) }}"
+      is_charging: "{{ states('sensor.carro_charging') == 'charging' }}"
+
+      # Calculate surplus: what we're exporting + what the car is already consuming
+      car_w: "{{ (charger_amps * voltage) if is_charging else 0 }}"
+      surplus_w: "{{ (-grid_w) + car_w }}"
+
+      # Target amps clamped to charger range (5-25A monophase)
+      target_amps: "{{ [5, [(surplus_w / voltage) | round(0) | int, 25] | min] | max }}"
+
+      # Minimum surplus to start charging (5A × voltage ≈ 1150W)
+      min_charge_w: "{{ 5 * voltage }}"
+
+      # Stop threshold with hysteresis (3A × voltage ≈ 690W)
+      # Lower than start threshold to avoid oscillating on/off when surplus
+      # hovers around the minimum (e.g. passing clouds)
+      stop_charge_w: "{{ 3 * voltage }}"
+
+      # Current mode flags
+      is_emergency: "{{ is_state('input_boolean.emergency_ev_charging', 'on') }}"
+      is_solar: "{{ is_state('input_boolean.solar_ev_charging', 'on') }}"
+
+  - choose:
+      # --- EMERGENCY: battery critically low (<40%) → charge at max from grid ---
+      - conditions:
+          - condition: template
+            value_template: "{{ battery < 40 and not is_emergency }}"
+        sequence:
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.emergency_ev_charging
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.solar_ev_charging
+          - action: number.set_value
+            target:
+              entity_id: number.carro_charge_current
+            data:
+              value: 25
+          - action: switch.turn_on
+            target:
+              entity_id: switch.carro_charge
+          - action: notify.notify
+            data:
+              title: "EV - Emergency charging"
+              message: "Battery at {{ battery }}%. Charging at 25A until 60%."
+
+      # --- EMERGENCY DONE: battery reached 60% → switch back to solar ---
+      - conditions:
+          - condition: template
+            value_template: "{{ is_emergency and battery >= 60 }}"
+        sequence:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.emergency_ev_charging
+          - action: notify.notify
+            data:
+              title: "EV - Emergency complete"
+              message: "Battery at {{ battery }}%. Switching to solar mode."
+
+      # --- EMERGENCY IN PROGRESS: do nothing, let it charge ---
+      - conditions:
+          - condition: template
+            value_template: "{{ is_emergency }}"
+        sequence: []
+
+      # --- SOLAR: enough surplus to charge ---
+      - conditions:
+          - condition: template
+            value_template: "{{ surplus_w >= min_charge_w }}"
+        sequence:
+          - choose:
+              # Start charging (not currently charging)
+              - conditions:
+                  - condition: template
+                    value_template: "{{ not is_charging }}"
+                sequence:
+                  - action: input_boolean.turn_on
+                    target:
+                      entity_id: input_boolean.solar_ev_charging
+                  - action: number.set_value
+                    target:
+                      entity_id: number.carro_charge_current
+                    data:
+                      value: "{{ target_amps }}"
+                  - action: switch.turn_on
+                    target:
+                      entity_id: switch.carro_charge
+                  - action: notify.notify
+                    data:
+                      title: "EV - Solar charging started"
+                      message: "Surplus: {{ surplus_w | round(0) }}W → {{ target_amps }}A. Battery: {{ battery }}%."
+            # Already charging in solar mode → adjust amps
+            default:
+              - condition: template
+                value_template: "{{ is_solar }}"
+              - action: number.set_value
+                target:
+                  entity_id: number.carro_charge_current
+                data:
+                  value: "{{ target_amps }}"
+
+      # --- SOLAR: surplus dropped below stop threshold (hysteresis) → stop ---
+      - conditions:
+          - condition: template
+            value_template: "{{ is_solar and surplus_w < stop_charge_w }}"
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.carro_charge
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.solar_ev_charging
+          - action: notify.notify
+            data:
+              title: "EV - Solar charging stopped"
+              message: "Insufficient surplus: {{ surplus_w | round(0) }}W. Battery: {{ battery }}%."
+
+mode: single
