@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 540" font-family="Arial, Helvetica, sans-serif" font-size="13">
+
+  <!-- Solar Panels -->
+  <rect x="310" y="20" width="180" height="50" fill="#fff" stroke="#334155" stroke-width="1.5" rx="8"/>
+  <text x="400" y="50" fill="#1e293b" font-weight="600" text-anchor="middle">Solar Panels</text>
+
+  <!-- Line: Panels → Inverter -->
+  <line x1="400" y1="70" x2="400" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+  <polygon points="395,98 400,108 405,98" fill="#94a3b8"/>
+  <text x="425" y="90" font-size="10" fill="#64748b" text-anchor="middle">DC</text>
+
+  <!-- Inverter -->
+  <rect x="310" y="108" width="180" height="50" fill="#fff" stroke="#334155" stroke-width="1.5" rx="8"/>
+  <text x="400" y="138" fill="#1e293b" font-weight="600" text-anchor="middle">Inverter</text>
+
+  <!-- Line: Inverter → split -->
+  <line x1="400" y1="158" x2="400" y2="195" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- Horizontal split line -->
+  <line x1="120" y1="195" x2="680" y2="195" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- Vertical lines down to boxes -->
+  <line x1="120" y1="195" x2="120" y2="220" stroke="#94a3b8" stroke-width="1.5"/>
+  <polygon points="115,218 120,228 125,218" fill="#94a3b8"/>
+  <line x1="400" y1="195" x2="400" y2="220" stroke="#94a3b8" stroke-width="1.5"/>
+  <polygon points="395,218 400,228 405,218" fill="#94a3b8"/>
+  <line x1="680" y1="195" x2="680" y2="220" stroke="#94a3b8" stroke-width="1.5"/>
+  <polygon points="675,218 680,228 685,218" fill="#94a3b8"/>
+
+  <!-- ShellyProEM50 -->
+  <rect x="30" y="228" width="180" height="70" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5" rx="8"/>
+  <text x="120" y="253" fill="#0284c7" font-weight="600" text-anchor="middle">ShellyProEM50</text>
+  <text x="120" y="270" fill="#64748b" font-size="11" text-anchor="middle">Ch0: Solar production</text>
+  <text x="120" y="284" fill="#64748b" font-size="11" text-anchor="middle">Ch1: Grid net meter</text>
+
+  <!-- House Loads -->
+  <rect x="310" y="228" width="180" height="70" fill="#fff" stroke="#334155" stroke-width="1.5" rx="8"/>
+  <text x="400" y="260" fill="#1e293b" font-weight="600" text-anchor="middle">House Loads</text>
+
+  <!-- Tesla Wall Connector -->
+  <rect x="590" y="228" width="180" height="70" fill="#fff" stroke="#334155" stroke-width="1.5" rx="8"/>
+  <text x="680" y="253" fill="#1e293b" font-weight="600" text-anchor="middle">Tesla Wall Connector</text>
+  <text x="680" y="270" fill="#64748b" font-size="11" text-anchor="middle">Monophase, 5-25A</text>
+  <text x="680" y="284" fill="#64748b" font-size="11" text-anchor="middle">via Tesla integration</text>
+
+  <!-- Data line: Shelly → HA -->
+  <line x1="120" y1="298" x2="120" y2="400" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <line x1="120" y1="400" x2="148" y2="400" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <polygon points="146,395 156,400 146,405" fill="#0284c7"/>
+  <text x="105" y="350" font-size="10" fill="#0284c7" text-anchor="end">WiFi</text>
+
+  <!-- Control line: HA → Tesla -->
+  <line x1="650" y1="400" x2="680" y2="400" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <line x1="680" y1="400" x2="680" y2="298" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <polygon points="675,300 680,290 685,300" fill="#16a34a"/>
+  <text x="695" y="350" font-size="10" fill="#16a34a" text-anchor="start">API</text>
+
+  <!-- Home Assistant -->
+  <rect x="155" y="340" width="498" height="165" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" rx="8"/>
+  <text x="404" y="368" fill="#16a34a" font-weight="600" text-anchor="middle" font-size="14">Home Assistant</text>
+
+  <!-- HA steps -->
+  <text x="404" y="393" fill="#64748b" font-size="12" text-anchor="middle">Every 2 min:</text>
+  <text x="404" y="412" fill="#64748b" font-size="12" text-anchor="middle">1. Read grid_W, voltage from ShellyProEM50</text>
+  <text x="404" y="431" fill="#64748b" font-size="12" text-anchor="middle">2. Read charger_amps from Tesla</text>
+  <text x="404" y="450" fill="#64748b" font-size="12" text-anchor="middle">3. surplus = (-grid_W) + car_W</text>
+  <text x="404" y="469" fill="#64748b" font-size="12" text-anchor="middle">4. target_amps = clamp(surplus / V, 5, 25)</text>
+  <text x="404" y="488" fill="#64748b" font-size="12" text-anchor="middle">5. Set Tesla charging current</text>
+
+  <!-- Legend -->
+  <line x1="30" y1="525" x2="60" y2="525" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="65" y="529" font-size="10" fill="#0284c7" text-anchor="start">sensor data</text>
+  <line x1="180" y1="525" x2="210" y2="525" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="215" y="529" font-size="10" fill="#16a34a" text-anchor="start">control signal</text>
+  <line x1="340" y1="525" x2="370" y2="525" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="375" y="529" font-size="10" fill="#64748b" text-anchor="start">AC power</text>
+</svg>
