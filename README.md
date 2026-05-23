@@ -53,7 +53,7 @@ Emergency mode exists because sometimes the car comes home nearly empty and need
 
 ## Surplus reminder
 
-A second automation sends a notification when the panels are exporting more than 1150W for over 10 minutes but the car isn't plugged in. The car has to be at home and battery below 90%. Above 90%, the Tesla tapers charging current regardless of what you set, so it wouldn't absorb the surplus in any useful way. One notification per hour max.
+A second automation sends a notification when the panels are exporting more than 1150W for over 5 minutes but the car isn't plugged in. The car has to be at home and battery below 90%. Above 90%, the Tesla tapers charging current regardless of what you set, so it wouldn't absorb the surplus in any useful way. One notification per hour max.
 
 It's a simple nudge: "you're giving away energy, plug in the car."
 

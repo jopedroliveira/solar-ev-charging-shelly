@@ -3,7 +3,7 @@
 # isn't connected. Helps the user take advantage of free solar energy.
 #
 # Conditions:
-#   - Exporting >1150W to grid for 10+ minutes
+#   - Exporting >1150W to grid for 5+ minutes
 #   - Car is at home
 #   - Cable is disconnected
 #   - Battery below 90%
@@ -11,7 +11,7 @@
 
 alias: Solar Surplus - Plug in reminder
 description: >
-  Notifies when exporting >1150W for 10+ minutes with the car at home
+  Notifies when exporting >1150W for 5+ minutes with the car at home
   and cable disconnected. Max one notification per hour.
 
 triggers:
@@ -20,7 +20,7 @@ triggers:
     # grid_w < -1150 means exporting more than 1150W
     below: -1150
     for:
-      minutes: 10
+      minutes: 5
 
 conditions:
   - condition: state
